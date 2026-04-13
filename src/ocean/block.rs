@@ -88,6 +88,7 @@ impl WaterBlock {
     pub fn collect_visible_faces(&self, time: f32, animated: bool) -> Vec<WaterFace> {
         let mut faces = Vec::new();
         let vs = self.voxel_size;
+        let half = (self.size as f32 * vs) / 2.0;
 
         for ly in 0..self.size {
             for lz in 0..self.size {
@@ -95,12 +96,13 @@ impl WaterBlock {
                     let Some(voxel) = self.get(lx, ly, lz) else { continue };
                     if !voxel.is_water() { continue }
 
-                    let block_offset_x = (self.position.x * self.size as i32) as f32 * vs;
-                    let block_offset_z = (self.position.z * self.size as i32) as f32 * vs;
+                    let block_ox = (self.position.x * self.size as i32) as f32 * vs;
+                    let block_oz = (self.position.z * self.size as i32) as f32 * vs;
 
-                    let wx = block_offset_x + (lx as f32 * vs) - (self.size as f32 * vs) / 2.0;
-                    let wy = (ly as f32 * vs) - (self.size as f32 * vs) / 2.0;
-                    let wz = block_offset_z + (lz as f32 * vs) - (self.size as f32 * vs) / 2.0;
+                    // X and Z centered at origin, Y from 0 going UP (above grid)
+                    let wx = block_ox + (lx as f32 * vs) - half;
+                    let wy = (ly as f32 * vs);
+                    let wz = block_oz + (lz as f32 * vs) - half;
 
                     let wave_offset = if animated {
                         (time * 2.0f32 + wx * 0.5f32 + wz * 0.3f32).sin() * self.wave_amplitude

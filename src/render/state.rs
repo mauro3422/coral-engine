@@ -1,10 +1,9 @@
 // RenderState - Voxel-first architecture
 // Only manages voxel rendering with GPU instancing + grid/axes debug visualization
 use crate::ocean::render::{WaterFace, block_types};
-use crate::ocean::OceanWorld;
 use super::mesh::{Mesh, VoxelInstance};
 use super::pipeline::{CameraUniforms, VoxelPipeline, GridPipeline};
-use crate::core::scene::{Scene, SceneMesh};
+use crate::core::scene::{DebugMesh, DebugObject};
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use wgpu::SurfaceError;
 
@@ -193,7 +192,10 @@ impl RenderState {
     pub fn rebuild_block_visualization(&mut self, dims: crate::ocean::OceanDimensions) {
         let bounds = dims.bounds();
         let size = bounds.size();
-        let (wire_v, wire_i) = Mesh::wireframe_box_custom(size[0], size[1], size[2]);
+        let (wire_v, wire_i) = Mesh::wireframe_box_at(
+            bounds.min[0], bounds.min[1], bounds.min[2],
+            size[0], size[1], size[2],
+        );
         self.block_wireframe = Some(Mesh::new_colored(&self.device, &self.queue, &wire_v, &wire_i));
         self.block_voxel_grid = None;
     }
@@ -249,7 +251,7 @@ impl RenderState {
 
     pub fn render(
         &mut self,
-        scene: &Scene,
+        debug_objects: &[DebugObject],
         view_proj: cgmath::Matrix4<f32>,
         egui_clipped_meshes: &[egui::ClippedPrimitive],
         egui_textures_delta: &egui::TexturesDelta,
@@ -369,15 +371,15 @@ impl RenderState {
                 rpass.draw_indexed(0..wireframe.index_count, 0, 0..1);
             }
 
-            // Draw grid and axes
-            for object in &scene.objects {
-                let (pipeline, bind_group, mesh) = match object.mesh {
-                    SceneMesh::Grid => (
+            // Draw debug objects (grid, axes)
+            for debug_obj in debug_objects {
+                let (pipeline, bind_group, mesh) = match debug_obj.mesh {
+                    DebugMesh::Grid => (
                         &self.grid_pipeline.pipeline,
                         &self.grid_bind_group,
                         &self.grid_mesh,
                     ),
-                    SceneMesh::Axes => (
+                    DebugMesh::Axes => (
                         &self.grid_pipeline.pipeline,
                         &self.grid_bind_group,
                         &self.axes_mesh,

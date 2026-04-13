@@ -3,6 +3,7 @@ mod core;
 mod game;
 mod ocean;
 mod render;
+mod ui;
 
 use coordinator::EngineCoordinator;
 use render::state::RenderState;

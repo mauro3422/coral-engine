@@ -1,21 +1,21 @@
-// Game state - Simplified ocean-only architecture
+// Game state - Coral Engine
 // Uses OceanWorld as the primary simulation system
 
 use crate::ocean::OceanConfig;
 use crate::ocean::OceanWorld;
 use crate::ocean::config::DEFAULT_WATER_LAYERS;
-use crate::core::scene::{Scene, SceneMesh};
+use crate::core::scene::{Scene, WorldObjectType};
 use crate::render::viewport_api::ViewportState;
 
 pub struct Game {
     pub ocean_world: OceanWorld,
     pub viewport: ViewportState,
+    pub scene: Scene,
     pub running: bool,
 }
 
 impl Game {
     pub fn new() -> Self {
-        // Create default ocean config: single 4m block with 0.5m voxels (8x8x8)
         let ocean_config = OceanConfig::builder()
             .voxel_size(0.5)
             .block_world_size(4.0)
@@ -29,9 +29,13 @@ impl Game {
 
         let ocean_world = OceanWorld::new(ocean_config);
         let viewport = ViewportState::new();
+        let mut scene = Scene::standard();
+
+        // Add ocean as a world object
+        scene.add_object("Ocean", WorldObjectType::WaterBlock);
 
         println!(
-            "[Game] Ocean initialized: {} chunks, {} active voxels",
+            "[Game] Ocean initialized: {} blocks, {} active voxels",
             ocean_world.block_count(),
             ocean_world.active_voxel_count()
         );
@@ -39,18 +43,20 @@ impl Game {
         Self {
             ocean_world,
             viewport,
+            scene,
             running: true,
         }
     }
 
-    /// Create game with custom ocean configuration
     pub fn with_config(config: OceanConfig) -> Self {
         let ocean_world = OceanWorld::new(config);
         let viewport = ViewportState::new();
+        let scene = Scene::standard();
 
         Self {
             ocean_world,
             viewport,
+            scene,
             running: true,
         }
     }
@@ -61,38 +67,29 @@ impl Game {
         }
     }
 
-    pub fn build_scene(&self) -> Scene {
-        let mut scene = Scene::standard();
-
-        // Add debug visualization
-        if self.viewport.render_config.show_grid {
-            scene.push_identity(SceneMesh::Grid);
+    pub fn build_scene(&mut self) -> &Scene {
+        if let Some(ocean_obj) = self.scene.objects.iter_mut().find(|o| matches!(o.obj_type, WorldObjectType::WaterBlock)) {
+            let dims = self.ocean_world.dimensions();
+            ocean_obj.scale = [dims.width, dims.water_height, dims.depth];
+            ocean_obj.properties.clear();
+            ocean_obj.properties.push(
+                crate::core::scene::SceneProperty::Float("Wave Height".to_string(), self.ocean_world.config.wave_height)
+            );
+            ocean_obj.properties.push(
+                crate::core::scene::SceneProperty::Float("Wave Speed".to_string(), self.ocean_world.config.wave_speed)
+            );
+            ocean_obj.properties.push(
+                crate::core::scene::SceneProperty::Int("Layers".to_string(), self.ocean_world.config.water_layers as i32)
+            );
         }
-        if self.viewport.render_config.show_axes {
-            scene.push_identity(SceneMesh::Axes);
-        }
-
-        scene
+        &self.scene
     }
 
-    /// Regenerate ocean with current config
     pub fn regenerate_ocean(&mut self) {
         self.ocean_world.generate();
-        println!(
-            "[Game] Ocean regenerated: {} chunks",
-            self.ocean_world.block_count()
-        );
-    }
-
-    /// Update ocean configuration and regenerate
-    pub fn update_ocean_config(&mut self, config: OceanConfig) {
-        self.ocean_world.config = config;
-        self.regenerate_ocean();
     }
 }
 
 impl Default for Game {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }

@@ -31,10 +31,12 @@ impl OceanDimensions {
     }
 
     /// Convert to standard ObjectBounds for wireframe/collision
+    /// Water sits ON TOP of grid (Y=0), extends upward
     pub fn bounds(&self) -> ObjectBounds {
-        ObjectBounds::from_center_and_half_size(
-            [0.0, 0.0, 0.0],
-            [self.width / 2.0, self.water_height / 2.0, self.depth / 2.0],
+        let half = self.width / 2.0;
+        ObjectBounds::from_origin_and_size(
+            [-half, 0.0, -half],
+            [self.width, self.water_height, self.depth],
         )
     }
 }

@@ -170,38 +170,40 @@ impl Mesh {
 
     /// Wireframe box with custom dimensions (width, height, depth), centered at origin
     pub fn wireframe_box_custom(w: f32, h: f32, d: f32) -> (Vec<ColoredVertex>, Vec<u32>) {
-        let hw = w / 2.0; // half-width
-        let hh = h / 2.0; // half-height
-        let hd = d / 2.0; // half-depth
+        Self::wireframe_box_at(-w/2.0, -h/2.0, -d/2.0, w, h, d)
+    }
+
+    /// Wireframe box at a specific origin position
+    pub fn wireframe_box_at(ox: f32, oy: f32, oz: f32, w: f32, h: f32, d: f32) -> (Vec<ColoredVertex>, Vec<u32>) {
         let color = [1.0, 0.5, 0.0]; // Bright orange wireframe
         let vertices = vec![
             // Bottom face edges
-            ColoredVertex { position: [-hw, -hh, -hd], color },
-            ColoredVertex { position: [ hw, -hh, -hd], color },
-            ColoredVertex { position: [ hw, -hh, -hd], color },
-            ColoredVertex { position: [ hw, -hh,  hd], color },
-            ColoredVertex { position: [ hw, -hh,  hd], color },
-            ColoredVertex { position: [-hw, -hh,  hd], color },
-            ColoredVertex { position: [-hw, -hh,  hd], color },
-            ColoredVertex { position: [-hw, -hh, -hd], color },
+            ColoredVertex { position: [ox,    oy,    oz   ], color },
+            ColoredVertex { position: [ox+w,  oy,    oz   ], color },
+            ColoredVertex { position: [ox+w,  oy,    oz   ], color },
+            ColoredVertex { position: [ox+w,  oy,    oz+d ], color },
+            ColoredVertex { position: [ox+w,  oy,    oz+d ], color },
+            ColoredVertex { position: [ox,    oy,    oz+d ], color },
+            ColoredVertex { position: [ox,    oy,    oz+d ], color },
+            ColoredVertex { position: [ox,    oy,    oz   ], color },
             // Top face edges
-            ColoredVertex { position: [-hw,  hh, -hd], color },
-            ColoredVertex { position: [ hw,  hh, -hd], color },
-            ColoredVertex { position: [ hw,  hh, -hd], color },
-            ColoredVertex { position: [ hw,  hh,  hd], color },
-            ColoredVertex { position: [ hw,  hh,  hd], color },
-            ColoredVertex { position: [-hw,  hh,  hd], color },
-            ColoredVertex { position: [-hw,  hh,  hd], color },
-            ColoredVertex { position: [-hw,  hh, -hd], color },
+            ColoredVertex { position: [ox,    oy+h,  oz   ], color },
+            ColoredVertex { position: [ox+w,  oy+h,  oz   ], color },
+            ColoredVertex { position: [ox+w,  oy+h,  oz   ], color },
+            ColoredVertex { position: [ox+w,  oy+h,  oz+d ], color },
+            ColoredVertex { position: [ox+w,  oy+h,  oz+d ], color },
+            ColoredVertex { position: [ox,    oy+h,  oz+d ], color },
+            ColoredVertex { position: [ox,    oy+h,  oz+d ], color },
+            ColoredVertex { position: [ox,    oy+h,  oz   ], color },
             // Vertical edges
-            ColoredVertex { position: [-hw, -hh, -hd], color },
-            ColoredVertex { position: [-hw,  hh, -hd], color },
-            ColoredVertex { position: [ hw, -hh, -hd], color },
-            ColoredVertex { position: [ hw,  hh, -hd], color },
-            ColoredVertex { position: [ hw, -hh,  hd], color },
-            ColoredVertex { position: [ hw,  hh,  hd], color },
-            ColoredVertex { position: [-hw, -hh,  hd], color },
-            ColoredVertex { position: [-hw,  hh,  hd], color },
+            ColoredVertex { position: [ox,    oy,    oz   ], color },
+            ColoredVertex { position: [ox,    oy+h,  oz   ], color },
+            ColoredVertex { position: [ox+w,  oy,    oz   ], color },
+            ColoredVertex { position: [ox+w,  oy+h,  oz   ], color },
+            ColoredVertex { position: [ox+w,  oy,    oz+d ], color },
+            ColoredVertex { position: [ox+w,  oy+h,  oz+d ], color },
+            ColoredVertex { position: [ox,    oy,    oz+d ], color },
+            ColoredVertex { position: [ox,    oy+h,  oz+d ], color },
         ];
         let indices: Vec<u32> = (0..vertices.len() as u32).collect();
         (vertices, indices)
