@@ -1,0 +1,18 @@
+[package]
+name = "coral-engine"
+version = "0.4.0"
+edition = "2024"
+description = "Coral - A voxel-based ocean rendering engine"
+authors = ["Coral Engine Team"]
+
+[dependencies]
+wgpu = "24"
+winit = "0.30"
+egui = "0.31"
+egui-wgpu = "0.31"
+egui-winit = "0.31"
+cgmath = "0.18"
+pollster = "0.4"
+tobj = "3"
+raw-window-handle = "0.6"
+bytemuck = { version = "1", features = ["derive"] }
