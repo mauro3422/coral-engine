@@ -1,6 +1,7 @@
 // RenderState - Voxel-first architecture
 // Only manages voxel rendering with GPU instancing + grid/axes debug visualization
-use crate::ocean::render::{WaterFace, block_types};
+use crate::ocean::render::WaterFace;
+use crate::common::blocks::block_types;
 use super::mesh::{Mesh, VoxelInstance};
 use super::pipeline::{CameraUniforms, VoxelPipeline, GridPipeline};
 use crate::core::scene::{DebugMesh, DebugObject};
@@ -34,6 +35,9 @@ pub struct RenderState {
     // Block visualization meshes (debug wireframe + voxel grid)
     pub block_wireframe: Option<Mesh>,
     pub block_voxel_grid: Option<Mesh>,
+    
+    // Wireframe registry - supports multiple object wireframes
+    wireframe_registry: std::collections::HashMap<String, Mesh>,
     
     // Voxel mesh (dynamic)
     pub voxel_mesh: Option<VoxelMesh>,
@@ -153,6 +157,7 @@ impl RenderState {
             egui_renderer,
             block_wireframe: None,
             block_voxel_grid: None,
+            wireframe_registry: std::collections::HashMap::new(),
         }
     }
 
@@ -200,12 +205,37 @@ impl RenderState {
         self.block_voxel_grid = None;
     }
 
+    /// Register a wireframe for an object (supports multiple objects)
+    pub fn register_wireframe(&mut self, id: &str, bounds: &crate::ocean::ObjectBounds) {
+        let size = bounds.size();
+        let (wire_v, wire_i) = Mesh::wireframe_box_at(
+            bounds.min[0], bounds.min[1], bounds.min[2],
+            size[0], size[1], size[2],
+        );
+        let mesh = Mesh::new_colored(&self.device, &self.queue, &wire_v, &wire_i);
+        self.wireframe_registry.insert(id.to_string(), mesh);
+    }
+
+    /// Remove a wireframe by ID
+    pub fn remove_wireframe(&mut self, id: &str) {
+        self.wireframe_registry.remove(id);
+    }
+
+    /// Clear all wireframes
+    pub fn clear_wireframes(&mut self) {
+        self.wireframe_registry.clear();
+    }
+
+    /// Check if a wireframe exists
+    pub fn has_wireframe(&self, id: &str) -> bool {
+        self.wireframe_registry.contains_key(id)
+    }
+
     /// Build voxel mesh from visible faces using GPU instancing
     /// Each face is an instance of the cube mesh
     pub fn rebuild_voxel_mesh(&mut self, faces: &[([f32; 3], [f32; 3], u8)]) {
         if faces.is_empty() {
             self.voxel_mesh = None;
-            println!("[Render] Voxel mesh cleared (no faces)");
             return;
         }
 
@@ -226,7 +256,6 @@ impl RenderState {
     pub fn rebuild_voxel_mesh_from_instances(&mut self, instances: &[VoxelInstance]) {
         if instances.is_empty() {
             self.voxel_mesh = None;
-            println!("[Render] Voxel mesh cleared (no instances)");
             return;
         }
 
@@ -241,12 +270,10 @@ impl RenderState {
         self.queue.write_buffer(&instance_buffer, 0, bytemuck::cast_slice(instances));
 
         self.voxel_mesh = Some(VoxelMesh {
-            mesh: self.voxel_cube_mesh.clone(), // Reuse cube mesh
+            mesh: self.voxel_cube_mesh.clone(),
             instance_buffer,
             instance_count,
         });
-
-        println!("[Render] Voxel mesh rebuilt: {} instances (GPU instancing)", instance_count);
     }
 
     pub fn render(
@@ -271,8 +298,7 @@ impl RenderState {
             })
             .collect();
 
-        let water_count = instances.len();
-        println!("[Render] Water faces: {}", water_count);
+// Water faces are rendered via GPU instancing
 
         // Rebuild voxel mesh only when needed
         if rebuild_needed && !instances.is_empty() && show_water {
@@ -371,8 +397,21 @@ impl RenderState {
                 rpass.draw_indexed(0..wireframe.index_count, 0, 0..1);
             }
 
-            // Draw debug objects (grid, axes)
+            // Draw wireframe registry (multiple objects)
+            for (_, wireframe) in &self.wireframe_registry {
+                rpass.set_pipeline(&self.grid_pipeline.pipeline);
+                rpass.set_bind_group(0, &self.grid_bind_group, &[]);
+                rpass.set_vertex_buffer(0, wireframe.vertex_buffer.slice(..));
+                rpass.set_index_buffer(wireframe.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                rpass.draw_indexed(0..wireframe.index_count, 0, 0..1);
+            }
+
+            // Draw debug objects (grid, axes, wireframes)
             for debug_obj in debug_objects {
+                if !debug_obj.visible {
+                    continue;
+                }
+                
                 let (pipeline, bind_group, mesh) = match debug_obj.mesh {
                     DebugMesh::Grid => (
                         &self.grid_pipeline.pipeline,
@@ -384,6 +423,10 @@ impl RenderState {
                         &self.grid_bind_group,
                         &self.axes_mesh,
                     ),
+                    DebugMesh::Wireframe => {
+                        // Wireframe is handled separately via block_wireframe
+                        continue;
+                    }
                 };
 
                 rpass.set_pipeline(pipeline);

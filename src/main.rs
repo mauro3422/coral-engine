@@ -1,8 +1,10 @@
+mod common;
 mod coordinator;
 mod core;
 mod game;
 mod ocean;
 mod render;
+mod terrain;
 mod ui;
 
 use coordinator::EngineCoordinator;
@@ -75,6 +77,18 @@ impl ApplicationHandler for App {
 }
 
 fn main() {
+    std::panic::set_hook(Box::new(|panic_info| {
+        let msg = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Unknown panic".to_string()
+        };
+        let location = panic_info.location().map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column())).unwrap_or_default();
+        eprintln!("[PANIC] {} at {}", msg, location);
+    }));
+
     println!("=== Motor Grafico v0.4.0 - Ocean Engine ===");
     println!("[Core] Initializing ocean simulation...");
     println!("[Core] Starting...\n");

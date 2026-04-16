@@ -1,10 +1,11 @@
-// OceanWorld - Manages water blocks and animation
+//! OceanWorld - Manages water blocks and animation
 
-use std::collections::HashMap;
-use crate::ocean::config::OceanConfig;
+use crate::common::VoxelWorld;
 use crate::ocean::block::{BlockPos, WaterBlock};
-use crate::ocean::render::WaterFace;
 use crate::ocean::bounds::ObjectBounds;
+use crate::ocean::config::OceanConfig;
+use crate::ocean::render::WaterFace;
+use std::collections::HashMap;
 
 /// Standard dimensions for the ocean - always derived from actual config
 /// This is the canonical way to get ocean dimensions for wireframes, collision, etc.
@@ -64,11 +65,8 @@ impl OceanWorld {
         for bx in 0..self.config.block_count_x {
             for bz in 0..self.config.block_count_z {
                 let pos = BlockPos::new(bx, bz);
-                let mut block = WaterBlock::new(
-                    pos,
-                    self.config.block_size,
-                    self.config.voxel_size,
-                );
+                let mut block =
+                    WaterBlock::new(pos, self.config.block_size, self.config.voxel_size);
 
                 block.fill_with_surface_water(self.config.water_layers);
                 block.wave_amplitude = self.config.wave_height;
@@ -80,8 +78,12 @@ impl OceanWorld {
         }
 
         let (wx, wz) = (
-            self.config.block_count_x as f32 * self.config.block_size as f32 * self.config.voxel_size,
-            self.config.block_count_z as f32 * self.config.block_size as f32 * self.config.voxel_size,
+            self.config.block_count_x as f32
+                * self.config.block_size as f32
+                * self.config.voxel_size,
+            self.config.block_count_z as f32
+                * self.config.block_size as f32
+                * self.config.voxel_size,
         );
         println!(
             "[OceanWorld] Generated {} water blocks ({}x{} voxels, voxel={}m, layers={})",
@@ -98,7 +100,9 @@ impl OceanWorld {
     }
 
     pub fn update(&mut self, dt: f32) {
-        if !self.config.enable_animation { return }
+        if !self.config.enable_animation {
+            return;
+        }
         self.time += dt * self.config.wave_speed;
         for block in self.blocks.values_mut() {
             block.wave_amplitude = self.config.wave_height;
@@ -115,14 +119,17 @@ impl OceanWorld {
         all_faces
     }
 
-    pub fn block_count(&self) -> usize { self.blocks.len() }
+    pub fn block_count(&self) -> usize {
+        self.blocks.len()
+    }
 
     pub fn total_voxels(&self) -> usize {
         self.blocks.len() * (self.config.block_size.pow(3) as usize)
     }
 
     pub fn active_voxel_count(&self) -> usize {
-        self.blocks.values()
+        self.blocks
+            .values()
             .map(|b| b.voxels.iter().filter(|v| v.is_water()).count())
             .sum()
     }
@@ -130,5 +137,30 @@ impl OceanWorld {
     /// Get current dimensions derived from config - ALWAYS in sync
     pub fn dimensions(&self) -> OceanDimensions {
         OceanDimensions::from_config(&self.config)
+    }
+}
+
+impl crate::common::VoxelWorld for OceanWorld {
+    fn total_voxels(&self) -> usize {
+        self.total_voxels()
+    }
+
+    fn active_voxels(&self) -> usize {
+        self.active_voxel_count()
+    }
+
+    fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
+        let block_size = self.config.block_size as i32;
+        let bx = x / block_size;
+        let bz = z / block_size;
+
+        if let Some(block) = self.blocks.get(&BlockPos::new(bx, bz)) {
+            let lx = (x - bx * block_size) as u32;
+            let ly = y as u32;
+            let lz = (z - bz * block_size) as u32;
+            block.get(lx, ly, lz).map(|v| v.is_water()).unwrap_or(false)
+        } else {
+            false
+        }
     }
 }

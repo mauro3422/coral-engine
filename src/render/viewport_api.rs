@@ -2,8 +2,8 @@
 // Provides configuration panels, statistics, and runtime controls
 
 use crate::core::cartesian::{Axis3D, CoordinateSystem3D};
-use crate::ocean::OceanConfig;
 use crate::core::config::RenderConfig;
+use crate::ocean::OceanConfig;
 
 /// Viewport state - tracks all UI configuration
 pub struct ViewportState {
@@ -122,34 +122,45 @@ pub fn render_ocean_config_panel(
 
             // Voxel size control - changing this auto-recalculates block voxels
             ui.label("📐 Voxel Size (meters per cube):");
-            if ui.add(egui::Slider::new(&mut viewport.ocean_config.voxel_size, 0.1..=2.0)
-                .step_by(0.05))
+            if ui
+                .add(
+                    egui::Slider::new(&mut viewport.ocean_config.voxel_size, 0.1..=2.0)
+                        .step_by(0.05),
+                )
                 .changed()
             {
                 // Block size auto-recalculated during config sync
-                println!("[UI] Voxel size -> {:.2}m", viewport.ocean_config.voxel_size);
             }
-            ui.label(format!("  Each cube = {:.2}m x {:.2}m x {:.2}m",
+            ui.label(format!(
+                "  Each cube = {:.2}m x {:.2}m x {:.2}m",
                 viewport.ocean_config.voxel_size,
                 viewport.ocean_config.voxel_size,
-                viewport.ocean_config.voxel_size));
+                viewport.ocean_config.voxel_size
+            ));
 
             ui.separator();
 
             // Block physical size control
             ui.label("🧱 Block Physical Size (meters):");
-            if ui.add(egui::Slider::new(&mut viewport.ocean_config.block_world_size, 1.0..=16.0)
-                .step_by(0.5))
+            if ui
+                .add(
+                    egui::Slider::new(&mut viewport.ocean_config.block_world_size, 1.0..=16.0)
+                        .step_by(0.5),
+                )
                 .changed()
             {
-                println!("[UI] Block size -> {:.1}m", viewport.ocean_config.block_world_size);
+                // Block size changed
             }
             // Show calculated voxel count
-            let calculated_voxels = (viewport.ocean_config.block_world_size / viewport.ocean_config.voxel_size).round() as i32;
-            ui.label(format!("  Block = {:.1}m / {:.2}m = {} voxels/axis",
+            let calculated_voxels = (viewport.ocean_config.block_world_size
+                / viewport.ocean_config.voxel_size)
+                .round() as i32;
+            ui.label(format!(
+                "  Block = {:.1}m / {:.2}m = {} voxels/axis",
                 viewport.ocean_config.block_world_size,
                 viewport.ocean_config.voxel_size,
-                calculated_voxels));
+                calculated_voxels
+            ));
 
             ui.separator();
 
@@ -165,20 +176,29 @@ pub fn render_ocean_config_panel(
 
             // Wave height control
             ui.label("📏 Wave Height (amplitude):");
-            if ui.add(egui::Slider::new(&mut viewport.ocean_config.wave_height, 0.0..=2.0)
-                .step_by(0.05))
+            if ui
+                .add(
+                    egui::Slider::new(&mut viewport.ocean_config.wave_height, 0.0..=2.0)
+                        .step_by(0.05),
+                )
                 .changed()
             {
                 // Value updated live
             }
-            ui.label(format!("  Amplitude: {:.2}m", viewport.ocean_config.wave_height));
+            ui.label(format!(
+                "  Amplitude: {:.2}m",
+                viewport.ocean_config.wave_height
+            ));
 
             ui.separator();
 
             // Wave speed control
             ui.label("⚡ Wave Speed:");
-            if ui.add(egui::Slider::new(&mut viewport.ocean_config.wave_speed, 0.0..=5.0)
-                .step_by(0.1))
+            if ui
+                .add(
+                    egui::Slider::new(&mut viewport.ocean_config.wave_speed, 0.0..=5.0)
+                        .step_by(0.1),
+                )
                 .changed()
             {
                 // Value updated live
@@ -188,7 +208,10 @@ pub fn render_ocean_config_panel(
             ui.separator();
 
             // Animation toggle
-            let anim_resp = ui.checkbox(&mut viewport.ocean_config.enable_animation, "▶️ Enable Animation");
+            let anim_resp = ui.checkbox(
+                &mut viewport.ocean_config.enable_animation,
+                "▶️ Enable Animation",
+            );
             registry.track_widget(&anim_resp, "animation");
 
             ui.separator();
@@ -267,7 +290,10 @@ pub fn render_stats_panel(
                 viewport.ocean_config.block_size,
                 viewport.ocean_config.block_size
             ));
-            ui.label(format!("📐 Voxel Size: {:.2}m", viewport.ocean_config.voxel_size));
+            ui.label(format!(
+                "📐 Voxel Size: {:.2}m",
+                viewport.ocean_config.voxel_size
+            ));
             ui.label(format!("💎 Total Voxels: {}", total_voxels));
             ui.label(format!("🌊 Active Water: {}", active_voxels));
             ui.label(format!("🎨 Visible Faces: {}", visible_faces));
@@ -309,9 +335,7 @@ pub fn render_stats_panel(
 }
 
 /// Controls/Help panel
-pub fn render_controls_panel(
-    egui_ctx: &egui::Context,
-) -> crate::core::ui_router::UiLayerRegistry {
+pub fn render_controls_panel(egui_ctx: &egui::Context) -> crate::core::ui_router::UiLayerRegistry {
     let registry = crate::core::ui_router::UiLayerRegistry::default();
 
     egui::Window::new("🎮 Controls")

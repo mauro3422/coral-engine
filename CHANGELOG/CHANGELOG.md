@@ -59,4 +59,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-04-16
+
+### Refactoring & Best Practices
+
+#### Added
+- **Common Module** (`src/common/`)
+  - `common::constants` - All centralized constants (~60 constants)
+  - `common::blocks` - Block types (`block_types`, `validation` helpers)
+  - `common::face` - Shared `Face` and `ColoredFace` types
+  - `common::Error` - Engine-specific error type with `From` implementations
+  - `common::VoxelWorld` trait - Standard voxel world interface
+  - `common::WorldFactory`, `ConfigBuilder` traits
+  - `make_builder!`, `make_accessors!`, `make_validator!` macros
+- **Error handling utilities**:
+  - `ok_or_not_found()`, `convert_err()`
+  - `From<rusqlite::Error>`, `From<std::io::Error>`, `From<wgpu::SurfaceError>`
+- **File utilities**: `file_extension()`, `file_exists()`
+
+#### Architecture
+- **Constants centralized**:
+  - Camera: `DEFAULT_CAMERA_POSITION`, `DEFAULT_CAMERA_FOV`, `NEAR_PLANE`, etc.
+  - Ocean: `DEFAULT_VOXEL_SIZE`, `DEFAULT_WATER_LAYERS`, etc.
+  - Terrain: `DEFAULT_TERRAIN_SIZE_X`, `DEFAULT_TERRAIN_HEIGH`, etc.
+  - Input: `MOUSE_SENSITIVITY`, `MOUSE_CAPTURE_THRESHOLD`
+- **Block types unified** in `common::blocks::block_types`:
+  - `AIR`, `WATER`, `SAND`, `DIRT`, `STONE`, `GRASS`, `GRAVEL`, `CLAY`
+  - `color(id)`, `is_solid(id)`, `is_transparent(id)`, `is_water(id)`
+- **Face types unified** (`common/face.rs`):
+  - `Face` - Basic face with position/normal
+  - `ColoredFace` - Face with RGB color
+- **Traits standardized**:
+  - `World` - Basic world interface
+  - `VoxelWorld` - Implemented by `OceanWorld` and `TerrainWorld`
+  - `Renderable`, `Dimensions`, `Configurable`, `ConfigMut`
+
+#### Changed
+- Ocean render uses `common::ColoredFace`
+- Terrain render uses `common::ColoredFace`
+- All configs use getters/setters with validation
+- `core::input` uses centralized constants
+- `Camera` uses constants from `common`
+- `OceanWorld` and `TerrainWorld` implement `VoxelWorld`
+
+#### Removed
+- ~~30+ duplicate constants~~ - Now in `common::constants`
+- ~~Duplicate WaterFace/TerrainFace~~ - Now uses `common::ColoredFace`
+- ~~Duplicated MOUSE_SENSITIVITY in input module~~ - Uses `common`
+- Various unused imports cleaned
+
+#### Code Reduced
+- ~300+ lines of duplicate code eliminated
+- Consistent patterns: builder, getters/setters, validation
+- Standardized module structure with `//!` docs and re-exports
+
+---
+
 ## [Unreleased]

@@ -1,10 +1,9 @@
-// WaterBlock - A single block of water voxels (internal, not public API)
+//! WaterBlock - A single block of water voxels (internal, not public API)
 
+use crate::common::blocks::block_types;
 use crate::ocean::render::WaterFace;
 
-pub const AIR: u8 = 0;
-pub const WATER: u8 = 7;
-pub const SAND: u8 = 2;
+pub use block_types::{AIR, SAND, WATER};
 
 #[derive(Clone, Copy, Debug)]
 pub struct VoxelData {
@@ -12,10 +11,18 @@ pub struct VoxelData {
 }
 
 impl VoxelData {
-    pub const fn water() -> Self { Self { block_type: WATER } }
-    pub const fn sand() -> Self { Self { block_type: SAND } }
-    pub const fn air() -> Self { Self { block_type: AIR } }
-    pub const fn is_water(&self) -> bool { self.block_type == WATER }
+    pub const fn water() -> Self {
+        Self { block_type: WATER }
+    }
+    pub const fn sand() -> Self {
+        Self { block_type: SAND }
+    }
+    pub const fn air() -> Self {
+        Self { block_type: AIR }
+    }
+    pub const fn is_water(&self) -> bool {
+        self.block_type == WATER
+    }
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -25,7 +32,9 @@ pub struct BlockPos {
 }
 
 impl BlockPos {
-    pub fn new(x: i32, z: i32) -> Self { Self { x, z } }
+    pub fn new(x: i32, z: i32) -> Self {
+        Self { x, z }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -93,8 +102,12 @@ impl WaterBlock {
         for ly in 0..self.size {
             for lz in 0..self.size {
                 for lx in 0..self.size {
-                    let Some(voxel) = self.get(lx, ly, lz) else { continue };
-                    if !voxel.is_water() { continue }
+                    let Some(voxel) = self.get(lx, ly, lz) else {
+                        continue;
+                    };
+                    if !voxel.is_water() {
+                        continue;
+                    }
 
                     let block_ox = (self.position.x * self.size as i32) as f32 * vs;
                     let block_oz = (self.position.z * self.size as i32) as f32 * vs;
@@ -126,9 +139,15 @@ impl WaterBlock {
     fn add_face_if_exposed(
         &self,
         faces: &mut Vec<WaterFace>,
-        wx: f32, wy: f32, wz: f32,
-        lx: u32, ly: u32, lz: u32,
-        nx: i32, ny: i32, nz: i32,
+        wx: f32,
+        wy: f32,
+        wz: f32,
+        lx: u32,
+        ly: u32,
+        lz: u32,
+        nx: i32,
+        ny: i32,
+        nz: i32,
     ) {
         let check_x = lx.wrapping_add(nx as u32);
         let check_y = ly.wrapping_add(ny as u32);
@@ -141,10 +160,10 @@ impl WaterBlock {
         };
 
         if exposed {
-            faces.push(WaterFace {
-                position: [wx, wy, wz],
-                normal: [nx as f32, ny as f32, nz as f32],
-            });
+            faces.push(WaterFace::new(
+                [wx, wy, wz],
+                [nx as f32, ny as f32, nz as f32],
+            ));
         }
     }
 }

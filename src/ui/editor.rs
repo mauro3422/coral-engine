@@ -1,5 +1,7 @@
-// Editor State - Central state for the Blender-style interface
-// Manages selection, tools, and panel visibility
+//! Editor State - Central state for the Blender-style interface
+//! Manages selection, tools, and panel visibility
+//!
+//! Note: This module has dead_code because UI features are not fully implemented
 
 use crate::core::scene::{ObjectId, SceneProperty};
 
@@ -11,7 +13,9 @@ pub struct EditorSelection {
 }
 
 impl EditorSelection {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn select(&mut self, id: ObjectId) {
         self.selected_id = Some(id);
@@ -78,5 +82,7 @@ impl EditorState {
 }
 
 impl Default for EditorState {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
